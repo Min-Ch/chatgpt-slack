@@ -53,6 +53,7 @@ def stats_for_this_month():
                     date_obj['process_time'] += log['process_time']
                     total_tokens += log['tokens']
                     total_process_time += log['process_time']
+            date_obj['process_time'] = round(date_obj['process_time'], 2)
             date_result.append(date_obj)
         user_obj = {
             "user_id": user_id,

@@ -87,3 +87,19 @@ def num_tokens_from_messages(messages, model="gpt-3.5-turbo-0301"):
     else:
         raise TypeError(f"messages must be a list or str, not {type(messages)}")
     return num_tokens
+
+
+def translate_to_eng(text):
+    content = f"아래를 영어로 번역해줘 \n {text}"
+    response = send([format_conversation(content, role='user')])
+    return response['choices'][0]['message']["content"], response['usage']["total_tokens"]
+
+
+def create_image(prompt, n=1, size="512x512"):
+    return openai.Image.create(
+        prompt=prompt,
+        n=n,
+        size=size
+    )
+
+openai.ErrorObject
