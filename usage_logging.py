@@ -11,11 +11,14 @@ timedfilehandler.suffix = "%Y%m%d"
 logger.addHandler(timedfilehandler)
 
 
-def logging_decorator(func):
-    def wrapper(user_id, *args, **kwargs):
-        start_time = time.time()
-        a, b, tokens = func(*args, **kwargs)
-        logger.info(f"{user_id}/{tokens}/{time.time() - start_time}")
-        return a, b
+class UssageLogging:
+    def __init__(self, user_id):
+        self.user_id = user_id
+        self.tokens = 0
 
-    return wrapper
+    def __enter__(self):
+        self.start_time = time.time()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        logger.info(f"{self.user_id}/{self.tokens}/{time.time() - self.start_time}")

@@ -1,6 +1,5 @@
 import datetime
 import pytz
-from config import USERS
 
 
 def now(timezone="UTC"):
@@ -24,10 +23,6 @@ def current_month_range():
     start = today.replace(day=1)
     days_of_month = [date_to_str(start + datetime.timedelta(days=x)) for x in range((today - start).days + 1)]
     return days_of_month
-
-
-def get_users():
-    return USERS
 
 
 def create_ascii_table(headers, table_data):

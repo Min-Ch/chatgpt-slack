@@ -1,8 +1,7 @@
 import openai
 import requests
-import time
+import tiktoken
 from utils import current_month_range
-from decorator import logging_decorator
 from config import CONFIG
 
 # 발급받은 OpenAI API Key 기입
@@ -16,22 +15,6 @@ def format_conversation(content, role='user'):
         "role": role,
         "content": content
     }
-
-
-@logging_decorator
-def send_conversation_list(conversations):
-    tokens = 0
-    response = send(conversations)
-    tokens += response['usage']['total_tokens']
-    answer = response["choices"][0]["message"]["content"]
-    time.sleep(3)
-    summarize_response = summarize(answer)
-    tokens += summarize_response['usage']['total_tokens']
-    summarize_answer = summarize_response["choices"][0]["message"]["content"]
-    conversations.append({"role": "assistant", "content": summarize_answer})
-    while len(conversations) > 4:  # 최대 5개의 대화를 유지
-        del conversations[0]
-    return answer, conversations, tokens
 
 
 def check_token_price_this_month():
@@ -55,25 +38,52 @@ def check_token_price_this_month():
                 total_tokens += data.get('n_context_tokens_total', 0)
                 total_tokens += data.get('n_generated_tokens_total', 0)
         else:
-            print(response.json())
+            raise Exception(f"Error: {response.status_code} {response.text}")
     # model: gpt-3.5-turbo 기준 pricing
     return total_tokens, (total_tokens * 0.0000027)
 
 
-def summarize(text):
-    messages = [{
-        'role': 'user',
-        'content': f'이 내용 한국어로 한 문장으로 요약해줘 ###\n{text}\n###'
-    }]
-    result = send(messages)
-    return result
-
-
-def send(messages, model="gpt-3.5-turbo", max_tokens=500, temperature=1):
+def send(messages, model="gpt-3.5-turbo-0301", max_tokens=500, temperature=0.7, stream=False):
     data = {
         "model": model,
         "messages": messages,
         "temperature": temperature,
-        "max_tokens": max_tokens
+        "max_tokens": max_tokens,
+        "stream": stream,
     }
     return openai.ChatCompletion.create(**data)
+
+
+def num_tokens_from_messages(messages, model="gpt-3.5-turbo-0301"):
+    """Returns the number of tokens used by a list of messages."""
+    if model == "gpt-3.5-turbo":
+        print("Warning: gpt-3.5-turbo may change over time. Returning num tokens assuming gpt-3.5-turbo-0301.")
+        return num_tokens_from_messages(messages, model="gpt-3.5-turbo-0301")
+    elif model == "gpt-4":
+        print("Warning: gpt-4 may change over time. Returning num tokens assuming gpt-4-0314.")
+        return num_tokens_from_messages(messages, model="gpt-4-0314")
+    elif model == "gpt-3.5-turbo-0301":
+        tokens_per_message = 4  # every message follows <|start|>{role/name}\n{content}<|end|>\n
+        tokens_per_name = -1  # if there's a name, the role is omitted
+    elif model == "gpt-4-0314":
+        tokens_per_message = 3
+        tokens_per_name = 1
+    else:
+        raise NotImplementedError(f"""num_tokens_from_messages() is not implemented for model {model}. See https://github.com/openai/openai-python/blob/main/chatml.md for information on how messages are converted to tokens.""")
+
+    encoding = tiktoken.encoding_for_model(model)
+
+    num_tokens = 0
+    if type(messages) == list:
+        for message in messages:
+            num_tokens += tokens_per_message
+            for key, value in message.items():
+                num_tokens += len(encoding.encode(value))
+                if key == "name":
+                    num_tokens += tokens_per_name
+        num_tokens += 3  # every reply is primed with <|start|>assistant<|message|>
+    elif type(messages) == str:
+        num_tokens += len(encoding.encode(messages))
+    else:
+        raise TypeError(f"messages must be a list or str, not {type(messages)}")
+    return num_tokens

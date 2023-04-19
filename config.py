@@ -7,6 +7,5 @@ CONFIG = {
     "BOT_TOKEN": os.getenv('BOT_TOKEN'),
     "SIGNING_SECRET": os.getenv('SIGNING_SECRET'),
     "API_KEY": os.getenv('API_KEY'),
+    "APP_TOKEN": os.getenv('APP_TOKEN'),
 }
-
-USERS = ['U04HPTHH1NU']

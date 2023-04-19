@@ -1,6 +1,6 @@
 import re
 import glob
-from utils import current_year_month, current_month_range, get_users
+from utils import current_year_month, current_month_range
 
 
 def log_files():
@@ -18,6 +18,7 @@ def stats_for_this_month():
     pattern = r"(\d{4}-\d{2}-\d{2})\s\d{2}:\d{2}:\d{2},\d{3}\s\w+:\s(.+)"
     files = log_files()
     logs = []
+    user_ids = set()
     for file in files:
         try:
             with open(file, "r") as f:
@@ -28,6 +29,7 @@ def stats_for_this_month():
                         continue
                     timestamp, log_content = match.groups()
                     log_content = parse_log_content(log_content)
+                    user_ids.add(log_content['id'])
                     logs.append({"timestamp": timestamp, **log_content})
         except Exception as e:
             print(e)
@@ -37,7 +39,7 @@ def stats_for_this_month():
     total_tokens = 0
     total_process_time = 0
 
-    for user_id in get_users():
+    for user_id in user_ids:
         date_result = []
         for date in current_month_range():
             date_obj = {
