@@ -48,6 +48,8 @@ def create_ascii_table(headers, table_data):
 
 
 def user_data_to_ascii_table(user_date_list):
+    if not user_date_list:
+        return "No data"
     table_data = [["date", "tokens", "times"]]
     headers = [16, 15, 15]
     for user_data in user_date_list:

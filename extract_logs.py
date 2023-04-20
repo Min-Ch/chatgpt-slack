@@ -67,7 +67,7 @@ def user_stats(user_id):
     result = stats_for_this_month()
     filtered_list = list(filter(lambda x: x['user_id'] == user_id, result))
     if not filtered_list:
-        raise Exception("User not found")
+        return [], 0, 0
 
     user_date_list = filtered_list[0]['date']
     user_total_token = sum([x['tokens'] for x in user_date_list])
